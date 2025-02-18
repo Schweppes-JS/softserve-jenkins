@@ -8,7 +8,9 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/Schweppes-JS/softserve-jenkins.git'
+                echo "REMOTE_VM_IP: ${REMOTE_VM_IP}"
+                echo "REMOTE_VM_USER: ${REMOTE_VM_USER}"
+                echo "SSH_KEY_PATH: ${SSH_KEY_PATH}"
             }
         }
         stage('Install Apache (httpd) Server') {
