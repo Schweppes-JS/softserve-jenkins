@@ -1,17 +1,24 @@
 pipeline {
     agent any
+    environment {
+        SSH_CREDENTIALS_ID = 'schweppes' 
+    }
     stages {
-        stage('Show Environment Variables') {
+        stage('Retrieve Credentials') {
             steps {
-                echo "REMOTE_VM_IP: ${AGENT_IP}"
-                echo "REMOTE_VM_USER: ${AGENT_USER}"
+                script {
+                    withCredentials([usernamePassword(credentialsId: env.SSH_CREDENTIALS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                        env.REMOTE_DEV_VM_USER = USER
+                        env.REMOTE_DEV_VM_PASSWORD = PASS
+                    }
+                }
             }
         }
         stage('Install Apache (httpd) Server') {
             steps {
                 script {
                     sh """
-                        ssh ${AGENT_USER}@${AGENT_IP} 'sudo apt update && sudo apt install -y apache2'
+                        ssh ${REMOTE_DEV_VM_USER}@${REMOTE_DEV_VM_IP} 'echo '${REMOTE_DEV_VM_PASSWORD}' | sudo -S apk add apache2 --no-interactive'
                     """
                 }
             }
@@ -20,7 +27,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                        ssh ${AGENT_USER}@${AGENT_IP} 'apache2 -v'
+                        echo '${REMOTE_DEV_VM_PASSWORD}' | ssh ${REMOTE_DEV_VM_USER}@${REMOTE_DEV_VM_IP} 'httpd -v'
                     """
                 }
             }
@@ -29,7 +36,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                        ssh ${AGENT_USER}@${AGENT_IP} 'tail -n 100 /var/log/apache2/error.log | grep -E "4[0-9]{2}|5[0-9]{2}"'
+                        echo '${REMOTE_DEV_VM_PASSWORD}' | ssh ${REMOTE_DEV_VM_USER}@${REMOTE_DEV_VM_IP} 'tail -n 100 /var/log/apache2/access.log | grep -E "4[0-9]{2}|5[0-9]{2}"'
                     """
                 }
             }
